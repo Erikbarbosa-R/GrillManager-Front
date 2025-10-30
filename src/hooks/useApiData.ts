@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
-import LocalApi from '../api/localApi';
-import type { ProductData } from '../api/localApi';
+import { listCategories } from '../services/categories';
+import { listProducts } from '../services/products';
+import { getRestaurant } from '../services/restaurant';
+
+export type ProductData = {
+  categories: Array<any>;
+  restaurant: any;
+};
 
 export const useApiData = () => {
   const [data, setData] = useState<ProductData | null>(null);
@@ -8,25 +14,35 @@ export const useApiData = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const api = LocalApi.getInstance();
-    
-    // Carrega dados iniciais
     const loadData = async () => {
       try {
         setLoading(true);
-        const [categoriesResponse, restaurantResponse] = await Promise.all([
-          api.getCategories(),
-          api.getRestaurant()
+        const [{ data: cats }, { data: prods }, { data: rest }] = await Promise.all([
+          listCategories(),
+          listProducts(),
+          getRestaurant(),
         ]);
 
-        if (categoriesResponse.success && restaurantResponse.success) {
-          setData({
-            categories: categoriesResponse.data || [],
-            restaurant: restaurantResponse.data || {}
+        // Agrupar produtos por categoria
+        const productsByCategory: Record<string, any[]> = {};
+        (prods || []).forEach((p: any) => {
+          const key = p.category || 'uncategorized';
+          if (!productsByCategory[key]) productsByCategory[key] = [];
+          productsByCategory[key].push({
+            ...p,
+            isPopular: Boolean(p.popular),
           });
-        } else {
-          setError('Erro ao carregar dados');
-        }
+        });
+
+        const categoriesWithProducts = (cats || []).map((c: any) => ({
+          ...c,
+          products: productsByCategory[c.id] || [],
+        }));
+
+        setData({
+          categories: categoriesWithProducts,
+          restaurant: rest || {},
+        });
       } catch (err) {
         setError('Erro de conexão');
       } finally {
@@ -35,32 +51,36 @@ export const useApiData = () => {
     };
 
     loadData();
-
-    // Inscreve-se para atualizações em tempo real
-    const unsubscribe = api.subscribe((newData) => {
-      setData(newData);
-    });
-
-    return () => {
-      unsubscribe();
-    };
   }, []);
 
   const refreshData = async () => {
-    const api = LocalApi.getInstance();
     try {
       setLoading(true);
-      const [categoriesResponse, restaurantResponse] = await Promise.all([
-        api.getCategories(),
-        api.getRestaurant()
+      const [{ data: cats }, { data: prods }, { data: rest }] = await Promise.all([
+        listCategories(),
+        listProducts(),
+        getRestaurant(),
       ]);
 
-      if (categoriesResponse.success && restaurantResponse.success) {
-        setData({
-          categories: categoriesResponse.data || [],
-          restaurant: restaurantResponse.data || {}
+      const productsByCategory: Record<string, any[]> = {};
+      (prods || []).forEach((p: any) => {
+        const key = p.category || 'uncategorized';
+        if (!productsByCategory[key]) productsByCategory[key] = [];
+        productsByCategory[key].push({
+          ...p,
+          isPopular: Boolean(p.popular),
         });
-      }
+      });
+
+      const categoriesWithProducts = (cats || []).map((c: any) => ({
+        ...c,
+        products: productsByCategory[c.id] || [],
+      }));
+
+      setData({
+        categories: categoriesWithProducts,
+        restaurant: rest || {},
+      });
     } catch (err) {
       setError('Erro ao atualizar dados');
     } finally {
