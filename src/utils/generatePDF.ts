@@ -123,7 +123,7 @@ export const generateOrderPDF = (order: OrderSummary) => {
     // Descrição (nome do item + customizações)
     let descricao = item.name;
     if (item.customizations) {
-      Object.entries(item.customizations).forEach(([key, options]: [string, any]) => {
+      Object.values(item.customizations).forEach((options: any) => {
         if (Array.isArray(options) && options.length > 0) {
           const opts = options.map((opt: any) => opt.name).join(', ');
           descricao += ` - ${opts}`;
