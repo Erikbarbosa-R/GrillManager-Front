@@ -43,8 +43,12 @@ export const useApiData = () => {
           categories: categoriesWithProducts,
           restaurant: rest || {},
         });
-      } catch (err) {
-        setError('Erro de conexão');
+      } catch (err: any) {
+        console.error('[useApiData] Erro ao carregar dados:', err);
+        const errorMessage = err?.message || err?.error?.message || 'Erro de conexão';
+        setError(errorMessage.includes('VITE_API_BASE_URL') 
+          ? 'URL da API não configurada. Verifique as variáveis de ambiente.' 
+          : errorMessage);
       } finally {
         setLoading(false);
       }
@@ -81,8 +85,12 @@ export const useApiData = () => {
         categories: categoriesWithProducts,
         restaurant: rest || {},
       });
-    } catch (err) {
-      setError('Erro ao atualizar dados');
+    } catch (err: any) {
+      console.error('[useApiData] Erro ao atualizar dados:', err);
+      const errorMessage = err?.message || err?.error?.message || 'Erro ao atualizar dados';
+      setError(errorMessage.includes('VITE_API_BASE_URL') 
+        ? 'URL da API não configurada. Verifique as variáveis de ambiente.' 
+        : errorMessage);
     } finally {
       setLoading(false);
     }
