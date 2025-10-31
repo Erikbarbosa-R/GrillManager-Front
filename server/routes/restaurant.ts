@@ -5,8 +5,17 @@ import { z } from 'zod';
 export const restaurantRouter = Router();
 
 restaurantRouter.get('/', (req, res) => {
-  const info = getOrInitRestaurant();
-  res.json({ success: true, data: info });
+  try {
+    const info = getOrInitRestaurant();
+    res.json({ success: true, data: info });
+  } catch (error: any) {
+    console.error('[Restaurant GET] Erro:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
 
 const updateSchema = z.object({
@@ -20,12 +29,21 @@ const updateSchema = z.object({
 });
 
 restaurantRouter.put('/', (req, res) => {
-  const parse = updateSchema.safeParse(req.body);
-  if (!parse.success) {
-    return res.status(400).json({ success: false, message: 'Dados inválidos', error: parse.error.flatten() });
+  try {
+    const parse = updateSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({ success: false, message: 'Dados inválidos', error: parse.error.flatten() });
+    }
+    const updated = setRestaurant(parse.data);
+    res.json({ success: true, data: updated });
+  } catch (error: any) {
+    console.error('[Restaurant PUT] Erro:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
-  const updated = setRestaurant(parse.data);
-  res.json({ success: true, data: updated });
 });
 
 
