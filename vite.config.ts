@@ -9,7 +9,17 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    host: true
+    host: true,
+    allowedHosts: [
+      'grillmanager-back-production.up.railway.app',
+      '.railway.app'
+    ]
+  },
+  preview: {
+    allowedHosts: [
+      'grillmanager-back-production.up.railway.app',
+      '.railway.app'
+    ]
   },
   build: {
     outDir: 'dist',
